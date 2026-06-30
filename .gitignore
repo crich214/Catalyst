@@ -1,0 +1,27 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# JetBrains
+.idea/
+
+# Environment variables
+.env
+
+# Python testing
+.pytest_cache/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
