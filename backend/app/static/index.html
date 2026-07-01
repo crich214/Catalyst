@@ -765,10 +765,13 @@
       if (e.key === "Enter") loadTicker();
     });
 
-    loadRegime();
-    loadHealth();
-    loadRadar();
-    loadTicker("FISV");
+    loadReasync function bootCatalyst() {
+  await loadRegime();
+  await loadHealth();
+  await loadRadar();
+}
+
+bootCatalyst();
   </script>
 </body>
 </html>
