@@ -761,17 +761,22 @@
       `;
     }
 
-    document.getElementById("tickerInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") loadTicker();
-    });
+    
 
-    loadReasync function bootCatalyst() {
-  await loadRegime();
-  await loadHealth();
-  await loadRadar();
+document.getElementById("tickerInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        loadTicker();
+    }
+});
+
+async function bootCatalyst() {
+    await loadRegime();
+    await loadHealth();
+    await loadRadar();
 }
 
 bootCatalyst();
-  </script>
+
+</script>
 </body>
 </html>

@@ -4,6 +4,7 @@ import pandas as pd
 from io import StringIO
 from datetime import datetime, timezone
 
+from app.market_data import get_market_rates
 
 FRED_BASE = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
@@ -95,6 +96,13 @@ def get_macro_data():
             "unit": meta["unit"],
             "max_stale_days": meta["max_stale_days"],
         }
+    market_rates = get_market_rates()
+
+    if market_rates.get("ten_year", {}).get("status") == "market_live":
+        output["ten_year"] = market_rates["ten_year"]
+
+    if market_rates.get("vix", {}).get("status") == "market_live":
+        output["vix"] = market_rates["vix"]
 
     return output
 
