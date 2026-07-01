@@ -1,96 +1,103 @@
 import requests
 import pandas as pd
+
 from io import StringIO
-from datetime import datetime
+from datetime import datetime, timezone
+
 
 FRED_BASE = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
+
 SERIES = {
-    "fed_funds": {
-        "id": "FEDFUNDS",
-        "name": "Federal Funds Rate",
-        "unit": "%"
-    },
-    "ten_year": {
-        "id": "DGS10",
-        "name": "10-Year Treasury",
-        "unit": "%"
-    },
-    "two_year": {
-        "id": "DGS2",
-        "name": "2-Year Treasury",
-        "unit": "%"
-    },
-    "cpi": {
-        "id": "CPIAUCSL",
-        "name": "CPI Index",
-        "unit": "Index"
-    },
-    "unemployment": {
-        "id": "UNRATE",
-        "name": "Unemployment Rate",
-        "unit": "%"
-    },
-    "credit_spread": {
-        "id": "BAA10Y",
-        "name": "BAA Corporate Spread over 10Y",
-        "unit": "%"
-    },
-    "vix": {
-        "id": "VIXCLS",
-        "name": "VIX",
-        "unit": "Index"
-    },
+    "fed_funds": {"id": "FEDFUNDS", "name": "Federal Funds Rate", "unit": "%", "max_stale_days": 45},
+    "ten_year": {"id": "DGS10", "name": "10-Year Treasury", "unit": "%", "max_stale_days": 1},
+    "two_year": {"id": "DGS2", "name": "2-Year Treasury", "unit": "%", "max_stale_days": 1},
+    "cpi": {"id": "CPIAUCSL", "name": "CPI Index", "unit": "Index", "max_stale_days": 45},
+    "unemployment": {"id": "UNRATE", "name": "Unemployment Rate", "unit": "%", "max_stale_days": 45},
+    "credit_spread": {"id": "BAA10Y", "name": "BAA Corporate Spread over 10Y", "unit": "%", "max_stale_days": 2},
+    "vix": {"id": "VIXCLS", "name": "VIX", "unit": "Index", "max_stale_days": 1},
 }
+
 
 FALLBACK_VALUES = {
-    "fed_funds": {"value": 4.75, "date": "fallback", "status": "fallback"},
-    "ten_year": {"value": 4.45, "date": "fallback", "status": "fallback"},
-    "two_year": {"value": 4.60, "date": "fallback", "status": "fallback"},
-    "cpi": {"value": 318.0, "date": "fallback", "status": "fallback"},
-    "unemployment": {"value": 4.1, "date": "fallback", "status": "fallback"},
-    "credit_spread": {"value": 2.1, "date": "fallback", "status": "fallback"},
-    "vix": {"value": 18.0, "date": "fallback", "status": "fallback"},
+    "fed_funds": {"value": 4.75, "date": "fallback"},
+    "ten_year": {"value": 4.45, "date": "fallback"},
+    "two_year": {"value": 4.60, "date": "fallback"},
+    "cpi": {"value": 318.0, "date": "fallback"},
+    "unemployment": {"value": 4.1, "date": "fallback"},
+    "credit_spread": {"value": 2.1, "date": "fallback"},
+    "vix": {"value": 18.0, "date": "fallback"},
 }
 
-def fetch_fred_series(series_id):
-    url = FRED_BASE + series_id
-    response = requests.get(url, timeout=10)
+
+def days_old(observation_date: str) -> int:
+    obs = datetime.strptime(observation_date, "%Y-%m-%d").date()
+    today = datetime.now(timezone.utc).date()
+    return (today - obs).days
+
+
+def fetch_fred_series(series_id: str, max_stale_days: int):
+    cache_buster = int(datetime.now(timezone.utc).timestamp())
+    url = f"{FRED_BASE}{series_id}&cache_bust={cache_buster}"
+
+    response = requests.get(
+        url,
+        timeout=10,
+        headers={"Cache-Control": "no-cache", "Pragma": "no-cache"},
+    )
     response.raise_for_status()
 
     df = pd.read_csv(StringIO(response.text))
-    value_col = series_id
-
-    df[value_col] = pd.to_numeric(df[value_col], errors="coerce")
-    df = df.dropna(subset=[value_col])
+    df[series_id] = pd.to_numeric(df[series_id], errors="coerce")
+    df = df.dropna(subset=[series_id])
 
     if df.empty:
         raise ValueError(f"No usable FRED data for {series_id}")
 
     last = df.iloc[-1]
+    observation_date = str(last["observation_date"])
+    stale_days = days_old(observation_date)
+
+    freshness_status = "live_current" if stale_days <= max_stale_days else "live_lagging"
+
     return {
-        "value": float(last[value_col]),
-        "date": str(last["observation_date"]),
-        "status": "live"
+        "value": float(last[series_id]),
+        "date": observation_date,
+        "status": freshness_status,
+        "source": "FRED",
+        "series_id": series_id,
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "staleness_days": stale_days,
     }
+
 
 def get_macro_data():
     output = {}
 
     for key, meta in SERIES.items():
         try:
-            point = fetch_fred_series(meta["id"])
-        except Exception:
-            point = FALLBACK_VALUES[key]
+            point = fetch_fred_series(meta["id"], meta["max_stale_days"])
+        except Exception as e:
+            fallback = FALLBACK_VALUES[key]
+            point = {
+                **fallback,
+                "status": "fallback",
+                "source": "Catalyst fallback",
+                "series_id": meta["id"],
+                "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                "staleness_days": None,
+                "fallback_reason": str(e),
+            }
 
         output[key] = {
             **point,
-            "series_id": meta["id"],
             "name": meta["name"],
-            "unit": meta["unit"]
+            "unit": meta["unit"],
+            "max_stale_days": meta["max_stale_days"],
         }
 
     return output
+
 
 def classify_macro_regime(data):
     fed = data["fed_funds"]["value"]
@@ -101,7 +108,6 @@ def classify_macro_regime(data):
     vix = data["vix"]["value"]
 
     curve = ten - two
-
     score = 50
     flags = []
 
@@ -174,15 +180,13 @@ def classify_macro_regime(data):
             "compounders": "Overweight quality" if score >= 50 else "Balanced",
             "dislocations": "Overweight selectively" if score >= 50 else "Selective",
             "moonshots": "Small basket only" if score >= 50 else "Moderate basket acceptable",
-            "cash": "Maintain dry powder" if score >= 60 else "Deploy gradually"
-        }
+            "cash": "Maintain dry powder" if score >= 60 else "Deploy gradually",
+        },
     }
 
+
 def build_summary(regime, score, flags):
-    if flags:
-        flag_text = ", ".join(flags[:4])
-    else:
-        flag_text = "no major stress signals"
+    flag_text = ", ".join(flags[:4]) if flags else "no major stress signals"
 
     return (
         f"Catalyst classifies the current macro regime as {regime}. "
@@ -190,21 +194,24 @@ def build_summary(regime, score, flags):
         "This regime influences sector preferences, score weights, and position sizing."
     )
 
+
 def macro_payload():
     data = get_macro_data()
     regime = classify_macro_regime(data)
 
-    live_count = len([v for v in data.values() if v["status"] == "live"])
-    fallback_count = len([v for v in data.values() if v["status"] != "live"])
+    live_current = len([v for v in data.values() if v["status"] == "live_current"])
+    live_lagging = len([v for v in data.values() if v["status"] == "live_lagging"])
+    fallback = len([v for v in data.values() if v["status"] == "fallback"])
 
     return {
         **regime,
         "data": data,
         "data_quality": {
             "total_series": len(data),
-            "live": live_count,
-            "fallback": fallback_count,
-            "status": "live" if fallback_count == 0 else "partial_live"
+            "live_current": live_current,
+            "live_lagging": live_lagging,
+            "fallback": fallback,
+            "status": "live_current" if live_lagging == 0 and fallback == 0 else "partial_live",
         },
-        "updated_at": datetime.utcnow().isoformat() + "Z"
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     }
