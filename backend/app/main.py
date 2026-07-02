@@ -109,6 +109,7 @@ def decision(ticker: str):
             "sector": scored.get("sector"),
             "base_rich_alpha_score": scored.get("rich_alpha_score"),
             "signal_adjustment": adjustment["signal_adjustment"],
+            "factor_adjustments": adjustment["factor_adjustments"],
             "adjusted_rich_alpha_score": adjusted_score,
             "signals_used": adjustment["signals_used"],
             "base_recommendation": scored.get("recommendation"),

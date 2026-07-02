@@ -7,11 +7,39 @@ MAX_TOTAL_ADJUSTMENT = 6
 MAX_SOURCE_ADJUSTMENT = 3
 
 
+FACTOR_WEIGHTS = {
+    "regulatory_risk": 0.30,
+    "financing_conditions": 0.25,
+    "demand_outlook": 0.20,
+    "execution_risk": 0.25,
+}
+
+
 def clamp(value, low, high):
     return max(low, min(high, value))
 
 
-def raw_signal_impact(signal, ticker: str, sector: str):
+def classify_signal_factor(signal):
+    title = signal.get("title", "").lower()
+    summary = signal.get("summary", "").lower()
+    text = f"{title} {summary}"
+
+    if any(word in text for word in ["sec", "cftc", "regulatory", "rule", "enforcement", "fraud", "charges"]):
+        return "regulatory_risk"
+
+    if any(word in text for word in ["rate", "fed", "inflation", "fomc", "treasury", "yield"]):
+        return "financing_conditions"
+
+    if any(word in text for word in ["ipo", "market statistics", "demand", "growth", "innovation", "etf"]):
+        return "demand_outlook"
+
+    if any(word in text for word in ["earthquake", "hurricane", "storm", "supply chain", "pipeline", "refinery"]):
+        return "execution_risk"
+
+    return "execution_risk"
+
+
+def raw_factor_impact(signal, ticker: str, sector: str):
     affected_companies = signal.get("affected_companies", [])
     affected_sectors = signal.get("affected_sectors", [])
     direction = signal.get("direction", "neutral")
@@ -22,34 +50,47 @@ def raw_signal_impact(signal, ticker: str, sector: str):
     sector_match = sector in affected_sectors if sector else False
 
     if not company_match and not sector_match:
-        return 0, company_match, sector_match, "No company or sector match."
+        return None
+
+    factor = classify_signal_factor(signal)
 
     if direction == "neutral":
-        return 0, company_match, sector_match, "Neutral signal."
-
-    if direction == "bullish":
-        impact = 3 if company_match else 1
+        raw = 0
+        reason = "Neutral signal; no factor change."
+    elif direction == "bullish":
+        raw = 3 if company_match else 1
+        reason = "Bullish signal matched company/sector."
     elif direction == "bearish":
-        impact = -3 if company_match else -1
+        raw = -3 if company_match else -1
+        reason = "Bearish signal matched company/sector."
     elif direction == "mixed":
-        impact = 1 if company_match else 0
+        raw = 1 if company_match else 0
+        reason = "Mixed signal; only company-specific matches receive a small adjustment."
     else:
-        impact = 0
+        raw = 0
+        reason = "Unknown signal direction."
 
     if "public comment" in title or "seeks public comment" in title:
-        impact = int(impact / 2)
-        reason = "Reduced impact because this is only a public comment/request, not a final rule."
-    else:
-        reason = "Applied standard company/sector signal impact."
+        raw = int(raw / 2)
+        reason += " Reduced because this is a public comment/request, not a final rule."
 
     if score >= 80:
-        impact *= 2
-        reason += " High-weight signal."
+        raw *= 2
+        reason += " Increased because signal weight is high."
     elif score < 55:
-        impact = int(impact / 2)
-        reason += " Low-weight signal."
+        raw = int(raw / 2)
+        reason += " Reduced because signal weight is low."
 
-    return impact, company_match, sector_match, reason
+    weighted = round(raw * FACTOR_WEIGHTS.get(factor, 0.2), 2)
+
+    return {
+        "factor": factor,
+        "raw": raw,
+        "weighted": weighted,
+        "company_match": company_match,
+        "sector_match": sector_match,
+        "reason": reason,
+    }
 
 
 def company_signal_adjustment(ticker: str, sector: str = ""):
@@ -57,59 +98,61 @@ def company_signal_adjustment(ticker: str, sector: str = ""):
     sector = (sector or "").strip()
 
     signals = build_signal_engine()
-    adjustments = []
-    source_totals = defaultdict(int)
 
-    total_adjustment = 0
+    factor_adjustments = {
+        "regulatory_risk": 0,
+        "financing_conditions": 0,
+        "demand_outlook": 0,
+        "execution_risk": 0,
+    }
+
+    explanations = []
+    source_totals = defaultdict(float)
 
     for signal in signals:
-        impact, company_match, sector_match, reason = raw_signal_impact(signal, ticker, sector)
+        impact = raw_factor_impact(signal, ticker, sector)
 
-        if impact == 0 and not company_match and not sector_match:
+        if impact is None:
             continue
 
         source = signal.get("source", "Unknown")
-        proposed_source_total = source_totals[source] + impact
+        proposed_source_total = source_totals[source] + impact["weighted"]
+
         capped_source_total = clamp(
             proposed_source_total,
             -MAX_SOURCE_ADJUSTMENT,
             MAX_SOURCE_ADJUSTMENT,
         )
 
-        source_capped_impact = capped_source_total - source_totals[source]
+        final_weighted = capped_source_total - source_totals[source]
         source_totals[source] = capped_source_total
 
-        proposed_total = total_adjustment + source_capped_impact
-        capped_total = clamp(
-            proposed_total,
-            -MAX_TOTAL_ADJUSTMENT,
-            MAX_TOTAL_ADJUSTMENT,
-        )
+        factor = impact["factor"]
+        factor_adjustments[factor] += final_weighted
 
-        final_impact = capped_total - total_adjustment
-        total_adjustment = capped_total
-
-        adjustments.append({
+        explanations.append({
             "title": signal.get("title"),
             "source": source,
             "direction": signal.get("direction"),
             "weighted_score": signal.get("weighted_score"),
-            "company_match": company_match,
-            "sector_match": sector_match,
-            "raw_adjustment": impact,
-            "final_adjustment": final_impact,
-            "reason": reason,
+            "factor": factor,
+            "company_match": impact["company_match"],
+            "sector_match": impact["sector_match"],
+            "raw_adjustment": impact["raw"],
+            "weighted_factor_adjustment": final_weighted,
+            "reason": impact["reason"],
             "summary": signal.get("summary"),
         })
 
-        if abs(total_adjustment) >= MAX_TOTAL_ADJUSTMENT:
-            break
+    total_adjustment = round(sum(factor_adjustments.values()), 2)
+    total_adjustment = clamp(total_adjustment, -MAX_TOTAL_ADJUSTMENT, MAX_TOTAL_ADJUSTMENT)
 
     return {
         "ticker": ticker,
         "sector": sector,
         "signal_adjustment": total_adjustment,
+        "factor_adjustments": factor_adjustments,
         "max_total_adjustment": MAX_TOTAL_ADJUSTMENT,
         "max_source_adjustment": MAX_SOURCE_ADJUSTMENT,
-        "signals_used": adjustments,
+        "signals_used": explanations,
     }
