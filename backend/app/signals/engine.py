@@ -12,15 +12,15 @@ def build_signal_engine():
     for event in report:
         signals.append(
             Signal(
-                source=event.source,
+                source=event["source"],
                 signal_type="event",
-                title=event.title,
-                direction=event.direction,
-                strength=event.event_score,
-                confidence=event.confidence,
-                affected_sectors=event.affected_sectors,
-                affected_companies=event.affected_companies,
-                summary=event.summary,
+                title=event["title"],
+                direction=event["direction"],
+                strength=event["event_score"],
+                confidence=event["confidence"],
+                affected_sectors=event["affected_sectors"],
+                affected_companies=event["affected_companies"],
+                summary=event["summary"],
             )
         )
 
