@@ -10,6 +10,7 @@ from app.universe import CORE_UNIVERSE, normalize_ticker
 from app.macro import macro_payload
 from app.news_events.engine import build_event_report
 from app.signals.engine import build_signal_engine
+from app.decision_engine.engine import company_signal_adjustment
 
 
 app = FastAPI(
@@ -35,6 +36,7 @@ def health():
         "live_data": "enabled via yfinance",
         "event_intelligence": "enabled",
         "signal_engine": "enabled",
+        "decision_engine": "enabled",
         "core_universe_count": len(CORE_UNIVERSE),
     }
 
@@ -47,17 +49,18 @@ def market_regime():
 @app.get("/system-health")
 def system_health():
     return {
-        "overall_health": 90,
+        "overall_health": 92,
         "feeds": [
             {"name": "Market Data", "status": "Live", "score": 90, "detail": "Yahoo Finance market connector enabled"},
             {"name": "Macro Data", "status": "Live", "score": 85, "detail": "FRED public CSV connector enabled"},
             {"name": "Event Intelligence", "status": "Live", "score": 80, "detail": "Public event feeds enabled"},
             {"name": "Signal Engine", "status": "Live", "score": 75, "detail": "Signals normalized from event intelligence"},
+            {"name": "Decision Engine", "status": "Live", "score": 70, "detail": "Signals mapped to company-level adjustments"},
             {"name": "Insider Data", "status": "Placeholder", "score": 35, "detail": "Connector pending"},
             {"name": "Congress Data", "status": "Placeholder", "score": 25, "detail": "Connector pending"},
             {"name": "AI Committee", "status": "Pending", "score": 20, "detail": "Memo engine pending"},
         ],
-        "next_priority": "Connect normalized signals into company scoring and AI Committee reasoning.",
+        "next_priority": "Apply decision engine adjustments directly into opportunity scoring.",
     }
 
 
@@ -81,6 +84,41 @@ def signals():
     return {
         "signals": build_signal_engine()
     }
+
+
+@app.get("/decision/{ticker}")
+def decision(ticker: str):
+    raw = ticker.upper().strip()
+    normalized = normalize_ticker(raw)
+
+    try:
+        stock = get_live_stock(normalized)
+        scored = score_stock(stock)
+
+        adjustment = company_signal_adjustment(
+            ticker=normalized,
+            sector=scored.get("sector", ""),
+        )
+
+        adjusted_score = scored.get("rich_alpha_score", 0) + adjustment["signal_adjustment"]
+        adjusted_score = max(0, min(100, round(adjusted_score, 1)))
+
+        return {
+            "ticker": normalized,
+            "company": scored.get("company"),
+            "sector": scored.get("sector"),
+            "base_rich_alpha_score": scored.get("rich_alpha_score"),
+            "signal_adjustment": adjustment["signal_adjustment"],
+            "adjusted_rich_alpha_score": adjusted_score,
+            "signals_used": adjustment["signals_used"],
+            "base_recommendation": scored.get("recommendation"),
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Could not build decision profile for ticker '{raw}': {str(e)}",
+        )
 
 
 @app.get("/live/{ticker}")
