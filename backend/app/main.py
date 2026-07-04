@@ -11,11 +11,12 @@ from app.macro import macro_payload
 from app.news_events.engine import build_event_report
 from app.signals.engine import build_signal_engine
 from app.decision_engine.engine import company_signal_adjustment
+from app.committee.engine import run_committee
 
 
 app = FastAPI(
     title="Catalyst Live Data API",
-    version="0.7.0",
+    version="0.9.0",
     description="Catalyst investment intelligence API."
 )
 
@@ -32,11 +33,12 @@ def home():
 def health():
     return {
         "status": "ok",
-        "version": "0.7.0",
+        "version": "0.9.0",
         "live_data": "enabled via yfinance",
         "event_intelligence": "enabled",
         "signal_engine": "enabled",
         "decision_engine": "enabled",
+        "ai_committee": "enabled",
         "core_universe_count": len(CORE_UNIVERSE),
     }
 
@@ -49,18 +51,16 @@ def market_regime():
 @app.get("/system-health")
 def system_health():
     return {
-        "overall_health": 92,
+        "overall_health": 96,
         "feeds": [
             {"name": "Market Data", "status": "Live", "score": 90, "detail": "Yahoo Finance market connector enabled"},
             {"name": "Macro Data", "status": "Live", "score": 85, "detail": "FRED public CSV connector enabled"},
             {"name": "Event Intelligence", "status": "Live", "score": 80, "detail": "Public event feeds enabled"},
-            {"name": "Signal Engine", "status": "Live", "score": 75, "detail": "Signals normalized from event intelligence"},
-            {"name": "Decision Engine", "status": "Live", "score": 70, "detail": "Signals mapped to company-level adjustments"},
-            {"name": "Insider Data", "status": "Placeholder", "score": 35, "detail": "Connector pending"},
-            {"name": "Congress Data", "status": "Placeholder", "score": 25, "detail": "Connector pending"},
-            {"name": "AI Committee", "status": "Pending", "score": 20, "detail": "Memo engine pending"},
+            {"name": "Signal Engine", "status": "Live", "score": 80, "detail": "Signals normalized from event intelligence"},
+            {"name": "Decision Engine", "status": "Live", "score": 80, "detail": "Signals mapped to company-level adjustments"},
+            {"name": "AI Committee", "status": "Live", "score": 70, "detail": "Rule-based investment committee enabled"},
         ],
-        "next_priority": "Apply decision engine adjustments directly into opportunity scoring.",
+        "next_priority": "Enhance committee memos with LLM-written synthesis.",
     }
 
 
@@ -74,16 +74,32 @@ def universe():
 
 @app.get("/events")
 def events():
-    return {
-        "events": build_event_report()
-    }
+    return {"events": build_event_report()}
 
 
 @app.get("/signals")
 def signals():
-    return {
-        "signals": build_signal_engine()
-    }
+    return {"signals": build_signal_engine()}
+
+
+def apply_decision_engine(scored: dict, ticker: str):
+    adjustment = company_signal_adjustment(
+        ticker=ticker,
+        sector=scored.get("sector", ""),
+    )
+
+    base_score = scored.get("rich_alpha_score", 0)
+    signal_adjustment = adjustment["signal_adjustment"]
+    adjusted_score = max(0, min(100, round(base_score + signal_adjustment, 1)))
+
+    scored["base_rich_alpha_score"] = base_score
+    scored["signal_adjustment"] = signal_adjustment
+    scored["factor_adjustments"] = adjustment["factor_adjustments"]
+    scored["adjusted_rich_alpha_score"] = adjusted_score
+    scored["signals_used"] = adjustment["signals_used"]
+    scored["rich_alpha_score"] = adjusted_score
+
+    return scored
 
 
 @app.get("/decision/{ticker}")
@@ -94,31 +110,26 @@ def decision(ticker: str):
     try:
         stock = get_live_stock(normalized)
         scored = score_stock(stock)
-
-        adjustment = company_signal_adjustment(
-            ticker=normalized,
-            sector=scored.get("sector", ""),
-        )
-
-        adjusted_score = scored.get("rich_alpha_score", 0) + adjustment["signal_adjustment"]
-        adjusted_score = max(0, min(100, round(adjusted_score, 1)))
-
-        return {
-            "ticker": normalized,
-            "company": scored.get("company"),
-            "sector": scored.get("sector"),
-            "base_rich_alpha_score": scored.get("rich_alpha_score"),
-            "signal_adjustment": adjustment["signal_adjustment"],
-            "factor_adjustments": adjustment["factor_adjustments"],
-            "adjusted_rich_alpha_score": adjusted_score,
-            "signals_used": adjustment["signals_used"],
-            "base_recommendation": scored.get("recommendation"),
-        }
+        return apply_decision_engine(scored, normalized)
 
     except Exception as e:
         raise HTTPException(
             status_code=404,
             detail=f"Could not build decision profile for ticker '{raw}': {str(e)}",
+        )
+
+
+@app.get("/committee/{ticker}")
+def committee(ticker: str):
+    raw = ticker.upper().strip()
+
+    try:
+        return run_committee(raw)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Could not run committee review for ticker '{raw}': {str(e)}",
         )
 
 
@@ -136,6 +147,7 @@ def live_ticker(ticker: str):
     try:
         stock = get_live_stock(normalized)
         result = score_stock(stock)
+        result = apply_decision_engine(result, normalized)
 
         if raw != normalized:
             result["alias_used"] = raw
@@ -157,20 +169,23 @@ def live_opportunities():
     for ticker in CORE_UNIVERSE:
         try:
             stock = get_live_stock(ticker)
-            results.append(score_stock(stock))
+            scored = score_stock(stock)
+            scored = apply_decision_engine(scored, ticker)
+            results.append(scored)
         except Exception as e:
-            results.append(
-                {
-                    "ticker": ticker,
-                    "error": str(e),
-                    "data_status": "unavailable",
-                }
-            )
+            results.append({
+                "ticker": ticker,
+                "error": str(e),
+                "data_status": "unavailable",
+            })
 
     valid = [r for r in results if "rich_alpha_score" in r]
     invalid = [r for r in results if "rich_alpha_score" not in r]
 
-    valid.sort(key=lambda x: x["rich_alpha_score"], reverse=True)
+    valid.sort(
+        key=lambda x: x.get("adjusted_rich_alpha_score", x.get("rich_alpha_score", 0)),
+        reverse=True,
+    )
 
     return {
         "ranked_opportunities": valid,
