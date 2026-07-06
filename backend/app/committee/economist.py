@@ -1,4 +1,4 @@
-from app.committee.models import CommitteeView
+from app.committee.models import AnalystReview
 from app.macro import macro_payload
 
 
@@ -9,11 +9,17 @@ def economist_review():
     score = int(macro.get("regime_score", 50))
 
     if score >= 75:
-        stance = "Bullish"
+        stance = "Supportive"
+        assessment = "Favorable"
+        material_concern = False
     elif score >= 55:
         stance = "Neutral"
+        assessment = "Balanced"
+        material_concern = False
     else:
-        stance = "Bearish"
+        stance = "Restrictive"
+        assessment = "Restrictive"
+        material_concern = True
 
     positives = []
     concerns = []
@@ -21,20 +27,23 @@ def economist_review():
     if score >= 75:
         positives.append("Macro regime is supportive of risk assets.")
     elif score >= 55:
-        positives.append("Macro backdrop is stable.")
+        positives.append("Macro backdrop is balanced but not strongly supportive.")
 
     if score < 55:
         concerns.append("Macro conditions remain restrictive.")
 
-    if "higher" in regime.lower():
-        concerns.append("Interest rates remain elevated.")
+    if "watchful" in regime.lower():
+        concerns.append("Market regime requires patience and selectivity.")
 
-    return CommitteeView(
+    return AnalystReview(
         member="Chief Economist",
+        role="Macro and market regime review",
+        domain="Macro",
+        assessment=assessment,
         stance=stance,
-        confidence=score,
-        score=score,
-        summary=f"Current market regime: {regime}",
+        confidence=max(50, min(95, score)),
+        material_concern=material_concern,
+        summary=f"Current market regime is {regime} with a macro score of {score}.",
         positives=positives,
         concerns=concerns,
     )

@@ -1,35 +1,59 @@
-from app.committee.models import CommitteeDecision
+from app.committee.models import CommitteeReview
 
 
-def chairman_decision(ticker: str, company: str, member_views):
-    average_score = round(
-        sum(view.score for view in member_views) / len(member_views)
+def chairman_review(
+    ticker: str,
+    company: str,
+    decision_engine_recommendation: str,
+    decision_engine_score: float,
+    analyst_reviews,
+):
+    supportive_count = len([
+        review for review in analyst_reviews
+        if review.stance in ["Supportive", "Constructive"]
+    ])
+
+    cautious_count = len([
+        review for review in analyst_reviews
+        if review.stance in ["Cautious", "Restrictive", "Defensive"]
+    ])
+
+    total_reviews = len(analyst_reviews)
+
+    # Default: committee affirms the Decision Engine.
+    committee_action = "AFFIRM"
+    final_recommendation = decision_engine_recommendation
+
+    # Committee modifies only when there is meaningful caution.
+    if cautious_count >= 2:
+        committee_action = "MODIFY"
+        final_recommendation = "WATCH"
+
+    # Committee overrides only in rare high-risk situations.
+    if cautious_count >= 3:
+        committee_action = "OVERRIDE"
+        final_recommendation = "WAIT"
+
+    conviction = round(
+        (decision_engine_score * 0.65)
+        + ((supportive_count / max(total_reviews, 1)) * 100 * 0.35)
     )
-
-    bullish_count = len([v for v in member_views if v.stance == "Bullish"])
-    cautious_count = len([v for v in member_views if v.stance == "Cautious"])
-    bearish_count = len([v for v in member_views if v.stance == "Bearish"])
-
-    if average_score >= 80 and cautious_count == 0 and bearish_count == 0:
-        recommendation = "BUY"
-    elif average_score >= 70 and bearish_count == 0:
-        recommendation = "WATCH / ACCUMULATE ON WEAKNESS"
-    elif cautious_count >= 2 or bearish_count >= 1:
-        recommendation = "WAIT"
-    else:
-        recommendation = "WATCH"
 
     chairman_summary = (
-        f"The committee reviewed {company} using macro, business, risk, "
-        f"and portfolio perspectives. Average committee score is {average_score}. "
-        f"The resulting recommendation is {recommendation}."
+        f"The Decision Engine recommends {decision_engine_recommendation}. "
+        f"The Investment Committee reviewed {company} across macro, business, risk, "
+        f"and portfolio perspectives. The committee action is {committee_action}. "
+        f"The final recommendation is {final_recommendation}."
     )
 
-    return CommitteeDecision(
+    return CommitteeReview(
         ticker=ticker,
         company=company,
-        recommendation=recommendation,
-        conviction=average_score,
+        decision_engine_recommendation=decision_engine_recommendation,
+        decision_engine_score=decision_engine_score,
+        committee_action=committee_action,
+        final_recommendation=final_recommendation,
+        conviction=max(0, min(100, conviction)),
         chairman_summary=chairman_summary,
-        member_views=member_views,
+        analyst_reviews=analyst_reviews,
     )

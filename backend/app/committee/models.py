@@ -3,21 +3,27 @@ from typing import List
 
 
 @dataclass
-class CommitteeView:
+class AnalystReview:
     member: str
+    role: str
+    domain: str
+    assessment: str
     stance: str
     confidence: int
-    score: int
+    material_concern: bool
     summary: str
     positives: List[str]
     concerns: List[str]
 
 
 @dataclass
-class CommitteeDecision:
+class CommitteeReview:
     ticker: str
     company: str
-    recommendation: str
+    decision_engine_recommendation: str
+    decision_engine_score: float
+    committee_action: str
+    final_recommendation: str
     conviction: int
     chairman_summary: str
-    member_views: List[CommitteeView]
+    analyst_reviews: List[AnalystReview]

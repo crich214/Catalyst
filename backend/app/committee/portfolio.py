@@ -1,36 +1,47 @@
-from app.committee.models import CommitteeView
+from app.committee.models import AnalystReview
 
 
 def portfolio_review(scored: dict):
-    margin_of_safety = scored.get("accumulation_plan", {}).get("estimated_margin_of_safety_pct", 0) or 0
-    max_position = scored.get("accumulation_plan", {}).get("max_position", "N/A")
     recommendation = scored.get("recommendation", "WATCH")
+    conviction = int(scored.get("conviction_score", 50))
 
-    if margin_of_safety >= 25:
-        stance = "Bullish"
-        score = 85
-    elif margin_of_safety >= 15:
-        stance = "Neutral"
-        score = 70
-    else:
-        stance = "Cautious"
-        score = 55
+    accumulation = scored.get("accumulation_plan", {})
+    max_position = accumulation.get("max_position", "N/A")
+    margin = accumulation.get("estimated_margin_of_safety_pct", 0)
 
     positives = []
     concerns = []
 
-    if margin_of_safety >= 15:
-        positives.append("Margin of safety is acceptable for gradual accumulation.")
+    if margin >= 20:
+        positives.append("Margin of safety supports accumulation.")
 
-    if margin_of_safety < 15:
-        concerns.append("Margin of safety is limited at the current price.")
+    elif margin >= 10:
+        positives.append("Valuation allows gradual accumulation.")
 
-    return CommitteeView(
+    else:
+        concerns.append("Limited margin of safety.")
+
+    if recommendation in ["BUY", "ACCUMULATE"]:
+        stance = "Supportive"
+
+    elif recommendation == "WATCH":
+        stance = "Neutral"
+
+    else:
+        stance = "Defensive"
+
+    if conviction < 60:
+        concerns.append("Overall conviction remains moderate.")
+
+    return AnalystReview(
         member="Portfolio Manager",
+        role="Portfolio construction and capital allocation",
         stance=stance,
-        confidence=score,
-        score=score,
-        summary=f"Portfolio view: {recommendation}. Suggested max position: {max_position}.",
+        confidence=max(50, min(95, conviction)),
+        summary=(
+            f"Decision Engine recommends {recommendation}. "
+            f"Suggested maximum position is {max_position}."
+        ),
         positives=positives,
         concerns=concerns,
     )

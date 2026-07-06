@@ -1,38 +1,79 @@
-from app.committee.models import CommitteeView
+from app.committee.models import AnalystReview
 
 
 def business_review(scored: dict):
-    score = int(scored.get("base_rich_alpha_score") or scored.get("rich_alpha_score") or 50)
-    company = scored.get("company", "Company")
+    score = int(
+        scored.get("adjusted_rich_alpha_score")
+        or scored.get("rich_alpha_score")
+        or 50
+    )
 
-    if score >= 80:
-        stance = "Bullish"
-    elif score >= 65:
-        stance = "Neutral"
-    else:
-        stance = "Cautious"
+    company = scored.get("company", "Company")
 
     positives = []
     concerns = []
 
-    if scored.get("valuation_score", 0) >= 70:
-        positives.append("Valuation appears attractive relative to Catalyst estimates.")
+    valuation = scored.get("valuation_score", 0)
+    conviction = scored.get("conviction_score", 0)
+    execution = scored.get("execution_score", 0)
+    risk = scored.get("risk_score", 0)
 
-    if scored.get("conviction_score", 0) >= 70:
-        positives.append("Conviction score supports the thesis.")
+    if valuation >= 70:
+        positives.append(
+            "Valuation appears attractive relative to intrinsic value."
+        )
 
-    if scored.get("execution_score", 0) < 60:
-        concerns.append("Execution score is below preferred threshold.")
+    if conviction >= 70:
+        positives.append(
+            "Business quality and conviction remain strong."
+        )
 
-    if scored.get("risk_score", 0) >= 65:
-        concerns.append("Risk score is elevated.")
+    if execution < 60:
+        concerns.append(
+            "Execution metrics remain below preferred threshold."
+        )
 
-    return CommitteeView(
+    if risk >= 65:
+        concerns.append(
+            "Underlying business risk has increased."
+        )
+
+    # -------- Committee Assessment --------
+
+    if score >= 80:
+        stance = "Supportive"
+        assessment = "Excellent"
+        material_concern = False
+
+    elif score >= 65:
+        stance = "Neutral"
+        assessment = "Strong"
+        material_concern = False
+
+    else:
+        stance = "Cautious"
+        assessment = "Weakening"
+        material_concern = True
+
+    return AnalystReview(
         member="Business Analyst",
+        role="Business quality and competitive position",
+        domain="Business",
+
+        assessment=assessment,
+
         stance=stance,
-        confidence=score,
-        score=score,
-        summary=f"{company} has a base business score of {score}.",
+
+        confidence=max(50, min(95, score)),
+
+        material_concern=material_concern,
+
+        summary=(
+            f"{company} maintains a Business Assessment of "
+            f"{assessment} with an adjusted Rich Alpha score of {score}."
+        ),
+
         positives=positives,
+
         concerns=concerns,
     )

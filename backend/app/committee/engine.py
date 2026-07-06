@@ -9,7 +9,7 @@ from app.committee.economist import economist_review
 from app.committee.business import business_review
 from app.committee.risk import risk_review
 from app.committee.portfolio import portfolio_review
-from app.committee.chairman import chairman_decision
+from app.committee.chairman import chairman_review
 
 
 def apply_decision_context(scored: dict, ticker: str):
@@ -39,20 +39,25 @@ def run_committee(ticker: str):
     scored = score_stock(stock)
     scored = apply_decision_context(scored, normalized)
 
-    views = [
+    analyst_reviews = [
         economist_review(),
         business_review(scored),
         risk_review(scored),
         portfolio_review(scored),
     ]
 
-    decision = chairman_decision(
+    decision_engine_recommendation = scored.get("recommendation", "WATCH")
+    decision_engine_score = scored.get("adjusted_rich_alpha_score") or scored.get("rich_alpha_score", 50)
+
+    review = chairman_review(
         ticker=normalized,
         company=scored.get("company", normalized),
-        member_views=views,
+        decision_engine_recommendation=decision_engine_recommendation,
+        decision_engine_score=decision_engine_score,
+        analyst_reviews=analyst_reviews,
     )
 
     return {
-        "decision": asdict(decision),
+        "decision": asdict(review),
         "company_profile": scored,
     }
