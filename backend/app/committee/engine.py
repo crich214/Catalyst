@@ -11,6 +11,8 @@ from app.committee.risk import risk_review
 from app.committee.portfolio import portfolio_review
 from app.committee.chairman import chairman_review
 
+from app.information.engine import build_information_briefing
+
 
 def apply_decision_context(scored: dict, ticker: str):
     adjustment = company_signal_adjustment(
@@ -39,15 +41,24 @@ def run_committee(ticker: str):
     scored = score_stock(stock)
     scored = apply_decision_context(scored, normalized)
 
+    information_briefing = build_information_briefing(
+        normalized,
+        scored.get("company", normalized),
+    )
+
     analyst_reviews = [
         economist_review(),
-        business_review(scored),
-        risk_review(scored),
+        business_review(scored, information_briefing),
+        risk_review(scored, information_briefing),
         portfolio_review(scored),
     ]
 
     decision_engine_recommendation = scored.get("recommendation", "WATCH")
-    decision_engine_score = scored.get("adjusted_rich_alpha_score") or scored.get("rich_alpha_score", 50)
+    decision_engine_score = (
+        scored.get("adjusted_rich_alpha_score")
+        or scored.get("rich_alpha_score")
+        or 50
+    )
 
     review = chairman_review(
         ticker=normalized,
@@ -60,4 +71,5 @@ def run_committee(ticker: str):
     return {
         "decision": asdict(review),
         "company_profile": scored,
+        "information_briefing": asdict(information_briefing),
     }

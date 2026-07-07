@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -12,6 +13,7 @@ from app.news_events.engine import build_event_report
 from app.signals.engine import build_signal_engine
 from app.decision_engine.engine import company_signal_adjustment
 from app.committee.engine import run_committee
+from app.information.engine import build_information_briefing
 
 
 app = FastAPI(
@@ -39,6 +41,7 @@ def health():
         "signal_engine": "enabled",
         "decision_engine": "enabled",
         "ai_committee": "enabled",
+        "information_engine": "enabled",
         "core_universe_count": len(CORE_UNIVERSE),
     }
 
@@ -59,8 +62,9 @@ def system_health():
             {"name": "Signal Engine", "status": "Live", "score": 80, "detail": "Signals normalized from event intelligence"},
             {"name": "Decision Engine", "status": "Live", "score": 80, "detail": "Signals mapped to company-level adjustments"},
             {"name": "AI Committee", "status": "Live", "score": 70, "detail": "Rule-based investment committee enabled"},
+            {"name": "Information Engine", "status": "Live", "score": 60, "detail": "Structured information briefing layer enabled"},
         ],
-        "next_priority": "Enhance committee memos with LLM-written synthesis.",
+        "next_priority": "Connect Information Engine to committee review.",
     }
 
 
@@ -80,6 +84,24 @@ def events():
 @app.get("/signals")
 def signals():
     return {"signals": build_signal_engine()}
+
+
+@app.get("/information/{ticker}")
+def information_briefing(ticker: str):
+    raw = ticker.upper().strip()
+    normalized = normalize_ticker(raw)
+
+    try:
+        stock = get_live_stock(normalized)
+        company = stock.get("company", normalized)
+        briefing = build_information_briefing(normalized, company)
+        return asdict(briefing)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Could not build information briefing for ticker '{raw}': {str(e)}",
+        )
 
 
 def apply_decision_engine(scored: dict, ticker: str):

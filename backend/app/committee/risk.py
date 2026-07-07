@@ -1,7 +1,7 @@
 from app.committee.models import AnalystReview
 
 
-def risk_review(scored: dict):
+def risk_review(scored: dict, information_briefing=None):
     factor_adjustments = scored.get("factor_adjustments", {})
     signals_used = scored.get("signals_used", [])
 
@@ -20,19 +20,6 @@ def risk_review(scored: dict):
         + abs(regulatory_risk)
         + negative_signal_count
     )
-
-    if combined_risk >= 75:
-        stance = "Cautious"
-        assessment = "Elevated risk profile"
-        material_concern = True
-    elif combined_risk >= 55:
-        stance = "Neutral"
-        assessment = "Moderate risk profile"
-        material_concern = False
-    else:
-        stance = "Constructive"
-        assessment = "Manageable risk profile"
-        material_concern = False
 
     positives = []
     concerns = []
@@ -58,6 +45,35 @@ def risk_review(scored: dict):
     if negative_signal_count > 0:
         concerns.append(f"{negative_signal_count} active negative signal(s) require monitoring.")
 
+    information_items = []
+    if information_briefing:
+        information_items = [
+            item for item in information_briefing.items
+            if "Risk" in item.affected_domains
+        ]
+
+    for item in information_items:
+        if item.materiality == "High":
+            concerns.append(
+                f"Material risk information identified: {item.summary}"
+            )
+
+    if combined_risk >= 75:
+        stance = "Cautious"
+        assessment = "Elevated risk profile"
+        material_concern = True
+    elif combined_risk >= 55:
+        stance = "Neutral"
+        assessment = "Moderate risk profile"
+        material_concern = False
+    else:
+        stance = "Constructive"
+        assessment = "Manageable risk profile"
+        material_concern = False
+
+    if any(item.materiality == "High" for item in information_items):
+        material_concern = True
+
     if not concerns:
         concerns.append("No material risk concerns identified by the Risk Officer.")
 
@@ -79,7 +95,8 @@ def risk_review(scored: dict):
         summary=(
             f"Risk review considered a base risk score of {risk_score}, "
             f"execution risk adjustment of {execution_risk}, regulatory risk adjustment "
-            f"of {regulatory_risk}, and {negative_signal_count} negative active signal(s)."
+            f"of {regulatory_risk}, {negative_signal_count} negative active signal(s), "
+            f"and {len(information_items)} relevant information item(s)."
         ),
         positives=positives,
         concerns=concerns,
