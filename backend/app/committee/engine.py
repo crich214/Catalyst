@@ -47,10 +47,10 @@ def run_committee(ticker: str):
     )
 
     analyst_reviews = [
-        economist_review(),
+        economist_review(information_briefing),
         business_review(scored, information_briefing),
         risk_review(scored, information_briefing),
-        portfolio_review(scored),
+        portfolio_review(scored, information_briefing),
     ]
 
     decision_engine_recommendation = scored.get("recommendation", "WATCH")
