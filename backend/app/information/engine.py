@@ -2,6 +2,7 @@ from typing import List
 
 from app.information.company_news import get_company_news
 from app.information.earnings import get_earnings_information
+from app.information.event_engine import build_information_events
 from app.information.geopolitics import get_geopolitical_news
 from app.information.macro_news import get_macro_news
 from app.information.models import InformationBriefing, InformationItem
@@ -9,35 +10,23 @@ from app.information.sec_filings import get_sec_filings
 
 
 def build_information_briefing(ticker: str, company: str) -> InformationBriefing:
-    """
-    Build a structured information briefing for the Investment Committee.
+    raw_items: List[InformationItem] = []
 
-    v1 gathers information from:
-      - Company news
-      - SEC filings
-      - Earnings information
-      - Macro developments
-      - Geopolitical developments
+    raw_items.extend(get_company_news(ticker))
+    raw_items.extend(get_sec_filings(ticker))
+    raw_items.extend(get_earnings_information(ticker))
+    raw_items.extend(get_macro_news())
+    raw_items.extend(get_geopolitical_news())
 
-    Each source returns normalized InformationItem objects.
-    """
-
-    items: List[InformationItem] = []
-
-    items.extend(get_company_news(ticker))
-    items.extend(get_sec_filings(ticker))
-    items.extend(get_earnings_information(ticker))
-    items.extend(get_macro_news())
-    items.extend(get_geopolitical_news())
-
-    overall_materiality = determine_overall_materiality(items)
+    events = build_information_events(raw_items)
+    overall_materiality = determine_overall_materiality(events)
 
     return InformationBriefing(
         ticker=ticker,
         company=company,
-        items=items,
+        items=events,
         overall_materiality=overall_materiality,
-        briefing_summary=build_briefing_summary(items, overall_materiality),
+        briefing_summary=build_briefing_summary(events, overall_materiality),
     )
 
 
@@ -62,6 +51,6 @@ def build_briefing_summary(
         return "No material outside information identified."
 
     return (
-        f"{len(items)} information item(s) identified. "
+        f"{len(items)} investment event(s) identified. "
         f"Overall materiality is {overall_materiality}."
     )

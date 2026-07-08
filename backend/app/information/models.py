@@ -14,6 +14,7 @@ class InformationItem:
     confidence: int
     affected_domains: List[str]
     url: Optional[str] = None
+    event_type: str = "General"
 
 
 @dataclass
