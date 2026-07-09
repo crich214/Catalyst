@@ -26,6 +26,25 @@ def determine_event_type(title: str, summary: str) -> str:
         "card network",
     ]
 
+    governance = [
+        "ceo resigns",
+        "ceo resignation",
+        "chief executive",
+        "president resigns",
+        "president exits",
+        "president leaves",
+        "cfo resigns",
+        "chief financial officer",
+        "board appoints",
+        "board names",
+        "executive transition",
+        "management change",
+        "leadership change",
+        "steps down",
+        "retires",
+        "resignation",
+    ]
+
     earnings = [
         "earnings",
         "guidance",
@@ -38,14 +57,15 @@ def determine_event_type(title: str, summary: str) -> str:
     ]
 
     regulatory_risk = [
-        "sec",
+        "sec investigation",
+        "sec charges",
         "investigation",
         "lawsuit",
-        "regulation",
-        "regulatory",
+        "regulatory action",
         "antitrust",
         "probe",
         "settlement",
+        "justice department",
     ]
 
     macro = [
@@ -73,6 +93,9 @@ def determine_event_type(title: str, summary: str) -> str:
     if any(word in text for word in strategic_transaction):
         return "StrategicTransaction"
 
+    if any(word in text for word in governance):
+        return "Governance"
+
     if any(word in text for word in earnings):
         return "Earnings"
 
@@ -93,6 +116,7 @@ def determine_materiality(title: str, summary: str) -> str:
 
     if event_type in [
         "StrategicTransaction",
+        "Governance",
         "Earnings",
         "RegulatoryRisk",
         "Macro",

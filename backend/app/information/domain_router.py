@@ -3,6 +3,8 @@ def determine_domains(event_type: str):
         "StrategicTransaction": ["Business", "Risk", "Portfolio"],
         "Earnings": ["Business", "Portfolio"],
         "RegulatoryRisk": ["Risk"],
+        "Governance": ["Business", "Risk"],
+        "InsiderActivity": ["Business", "Portfolio"],
         "Macro": ["Macro", "Portfolio"],
         "Geopolitical": ["Macro", "Risk"],
         "General": ["Business", "Risk", "Portfolio"],
