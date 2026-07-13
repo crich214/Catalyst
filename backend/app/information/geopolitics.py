@@ -5,15 +5,11 @@ from app.information.models import InformationItem
 
 def get_geopolitical_news() -> List[InformationItem]:
     """
-    Placeholder for geopolitical intelligence.
+    Temporary non-blocking geopolitical intelligence stub.
 
-    v1 will retrieve and normalize:
-      - Wars and military conflicts
-      - Trade restrictions and tariffs
-      - Sanctions
-      - Elections with market impact
-      - Major diplomatic developments
-      - Critical supply-chain disruptions
+    The prior Reuters RSS implementation could hang the entire
+    /information/{ticker} request. This stub keeps Catalyst stable
+    until a reliable live geopolitical source is added.
     """
 
     return []
