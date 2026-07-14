@@ -1,0 +1,36 @@
+[
+  {
+    "recorded_at": "2026-07-14T19:59:09.964507+00:00",
+    "ticker": "FISV",
+    "company": "Fiserv, Inc.",
+    "recommendation": "ACCUMULATE",
+    "rich_alpha_score": 83.5,
+    "conviction_score": 71.7,
+    "risk_score": 45.0,
+    "price": 49.56,
+    "committee_action": "AFFIRM",
+    "chairman_summary": "The Decision Engine recommends ACCUMULATE. The Investment Committee reviewed Fiserv, Inc. across macro, business, risk, and portfolio perspectives. The committee action is AFFIRM. The final recommendation is ACCUMULATE.",
+    "reasons": [
+      "Macro conditions remain restrictive.",
+      "Market regime requires patience and selectivity.",
+      "Material macro/geopolitical information identified: Current market regime is Balanced / Watchful with a regime score of 50 and an overall risk level of Moderate. Supported by 3 source(s): Catalyst Macro Engine.",
+      "Material macro/geopolitical information identified: TD Merchant Solutions, part of Toronto-Dominion Bank (TSX:TD), is rolling out the Clover all-in-one commerce platform in Canada. The launch comes through a partnership with Fiserv and brings point-of-sale hardware, payment processing, e-commerce, and business tools into a single system. For investors watching Toronto-Dominion Bank, this move puts more focus on TD Merchant Solutions and its role in supporting Canadian businesses. Payments and commerce technology have become a core part of...",
+      "Valuation appears attractive relative to intrinsic value.",
+      "Business quality and conviction remain strong.",
+      "Material business information identified: Citigroup (NYSE:C) reported a stronger second quarter of 2026, with management pointing to broad-based revenue growth, improved returns and continued capital returns, while cautioning that second-half results could be affected by normal seasonality and a deliberate increase in investment spending. Supported by 3 source(s): MarketBeat, Yahoo Finance.",
+      "Material business information identified: Fiserv is allegedly in talks to sell its STAR payment network.",
+      "Base risk score appears manageable.",
+      "No active event signals currently affect the company.",
+      "No material negative execution-risk adjustment was identified.",
+      "No material negative regulatory-risk adjustment was identified.",
+      "Material risk information identified: FISV filed a material current report on 2026-07-07.",
+      "Material risk information identified: TD Merchant Solutions, part of Toronto-Dominion Bank (TSX:TD), is rolling out the Clover all-in-one commerce platform in Canada. The launch comes through a partnership with Fiserv and brings point-of-sale hardware, payment processing, e-commerce, and business tools into a single system. For investors watching Toronto-Dominion Bank, this move puts more focus on TD Merchant Solutions and its role in supporting Canadian businesses. Payments and commerce technology have become a core part of...",
+      "Material risk information identified: Fiserv is allegedly in talks to sell its STAR payment network.",
+      "Margin of safety supports accumulation.",
+      "Suggested maximum position size is 4.0%.",
+      "Material portfolio information identified: Citigroup (NYSE:C) reported a stronger second quarter of 2026, with management pointing to broad-based revenue growth, improved returns and continued capital returns, while cautioning that second-half results could be affected by normal seasonality and a deliberate increase in investment spending. Supported by 3 source(s): MarketBeat, Yahoo Finance.",
+      "Material portfolio information identified: Current market regime is Balanced / Watchful with a regime score of 50 and an overall risk level of Moderate. Supported by 3 source(s): Catalyst Macro Engine.",
+      "Material portfolio information identified: Fiserv is allegedly in talks to sell its STAR payment network."
+    ]
+  }
+]

@@ -1,0 +1,61 @@
+{
+  "created_at": "2026-07-14T20:55:01.889086+00:00",
+  "starting_capital": 5000.0,
+  "invested_capital": 3250.01,
+  "cash": 1749.99,
+  "cash_reserve_pct": 35.0,
+  "positions": [
+    {
+      "ticker": "FISV",
+      "company": "Fiserv, Inc.",
+      "recommendation": "ACCUMULATE",
+      "rich_alpha_score": 83.5,
+      "conviction_score": 71.7,
+      "risk_score": 45,
+      "entry_price": 49.54,
+      "shares": 23.1038,
+      "target_amount": 1144.56,
+      "cost_basis": 1144.56,
+      "current_value": 1144.56,
+      "unrealized_gain_loss": 0.0,
+      "unrealized_return_pct": 0.0,
+      "margin_of_safety_pct": 35.5,
+      "reason": "Fiserv, Inc. is classified as Compounder on Sale / Dislocation within Unknown; live data is used for valuation and execution scoring when available."
+    },
+    {
+      "ticker": "PYPL",
+      "company": "PayPal Holdings, Inc.",
+      "recommendation": "ACCUMULATE",
+      "rich_alpha_score": 77.5,
+      "conviction_score": 70.8,
+      "risk_score": 45,
+      "entry_price": 47.37,
+      "shares": 22.426,
+      "target_amount": 1062.32,
+      "cost_basis": 1062.32,
+      "current_value": 1062.32,
+      "unrealized_gain_loss": 0.0,
+      "unrealized_return_pct": 0.0,
+      "margin_of_safety_pct": 44.4,
+      "reason": "PayPal Holdings, Inc. is classified as Dislocation / Payments within Financial Services; live data is used for valuation and execution scoring when available."
+    },
+    {
+      "ticker": "CRM",
+      "company": "Salesforce, Inc.",
+      "recommendation": "ACCUMULATE",
+      "rich_alpha_score": 76.1,
+      "conviction_score": 68.1,
+      "risk_score": 45,
+      "entry_price": 167.56,
+      "shares": 6.2254,
+      "target_amount": 1043.13,
+      "cost_basis": 1043.13,
+      "current_value": 1043.13,
+      "unrealized_gain_loss": 0.0,
+      "unrealized_return_pct": 0.0,
+      "margin_of_safety_pct": 35.5,
+      "reason": "Salesforce, Inc. is classified as Enterprise Software / AI within Technology; live data is used for valuation and execution scoring when available."
+    }
+  ],
+  "status": "READY"
+}

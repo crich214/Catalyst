@@ -3,8 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Catalyst Terminal</title>
-  <link rel="stylesheet" href="/static/css/catalyst.css" />
+
+  <link
+    rel="stylesheet"
+    href="/static/css/catalyst.css"
+  />
 </head>
 
 <body>
@@ -12,75 +17,198 @@
     <header>
       <div class="brand">
         <div class="logo">C</div>
+
         <div>
           <h1>Catalyst Terminal</h1>
-          <div class="muted">Every investment deserves a committee.</div>
+
+          <div class="muted">
+            Every investment deserves a committee.
+          </div>
         </div>
       </div>
 
       <div class="top-actions">
-        <div class="pill">Terminal <strong>v1.0</strong></div>
-        <div class="pill">Committee <strong>Live</strong></div>
-        <div class="pill" id="overallHealth">System Health <strong>Loading</strong></div>
+        <div class="pill">
+          Terminal <strong>v1.0</strong>
+        </div>
+
+        <div class="pill">
+          Committee <strong>Live</strong>
+        </div>
+
+        <div
+          class="pill"
+          id="overallHealth"
+        >
+          System Health <strong>Loading</strong>
+        </div>
       </div>
     </header>
 
     <section class="grid">
       <div class="card">
         <div class="section-title">
-          <h2>Current Market Regime</h2>
-          <button class="secondary" id="refreshRegime">Refresh</button>
+          <div>
+            <h2>Current Market Regime</h2>
+
+            <div class="muted">
+              Macro conditions guiding capital deployment.
+            </div>
+          </div>
+
+          <button
+            class="secondary"
+            id="refreshRegime"
+          >
+            Refresh
+          </button>
         </div>
 
-        <div class="metric" id="regimeScore">--</div>
-        <h2 id="regimeTitle">Loading...</h2>
-        <div class="muted" id="regimeSummary"></div>
-        <div class="chips" id="favoredThemes"></div>
+        <div
+          class="metric"
+          id="regimeScore"
+        >
+          --
+        </div>
+
+        <h2 id="regimeTitle">
+          Loading...
+        </h2>
+
+        <div
+          class="muted"
+          id="regimeSummary"
+        ></div>
+
+        <div
+          class="chips"
+          id="favoredThemes"
+        ></div>
+
         <div id="macroFacts"></div>
       </div>
 
       <div class="card">
         <div class="section-title">
-          <h2>System Health</h2>
-          <button class="secondary" id="refreshHealth">Refresh</button>
+          <div>
+            <h2>System Health</h2>
+
+            <div class="muted">
+              Live status of Catalyst intelligence engines.
+            </div>
+          </div>
+
+          <button
+            class="secondary"
+            id="refreshHealth"
+          >
+            Refresh
+          </button>
         </div>
 
         <div id="healthList">
-          <div class="loading">Checking system health...</div>
+          <div class="loading">
+            Checking system health...
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card opportunity-board">
+      <div class="section-title">
+        <div>
+          <h2>Opportunity Board</h2>
+
+          <div class="muted">
+            Actionable opportunities ranked by adjusted Rich Alpha.
+          </div>
+        </div>
+
+        <button id="refreshRadar">
+          Refresh Opportunities
+        </button>
+      </div>
+
+      <div id="opportunitySummary"></div>
+
+      <div id="radar">
+        <div class="loading">
+          Loading opportunity board...
         </div>
       </div>
     </section>
 
     <section class="grid">
-      <div class="card">
-        <div class="section-title">
-          <div>
-            <h2>Opportunity Radar</h2>
-            <div class="muted">Ranked using live data and decision-engine adjusted scores.</div>
-          </div>
-          <button id="refreshRadar">Refresh Radar</button>
-        </div>
-
-        <div id="radar">
-          <div class="loading">Loading radar...</div>
-        </div>
-      </div>
-
       <div class="card">
         <div class="section-title">
           <div>
             <h2>Investment Committee</h2>
-            <div class="muted">Enter a ticker and convene the Catalyst committee.</div>
+
+            <div class="muted">
+              Enter a ticker and convene the Catalyst committee.
+            </div>
           </div>
         </div>
 
         <div class="search">
-          <input id="tickerInput" value="JPM" placeholder="Enter ticker e.g. JPM, AAPL, NVDA" />
-          <button id="analyzeTicker">Analyze</button>
+          <input
+            id="tickerInput"
+            value="FISV"
+            placeholder="Enter ticker e.g. FISV, PYPL, CRM"
+          />
+
+          <button id="analyzeTicker">
+            Convene Committee
+          </button>
         </div>
 
         <div id="resultCard">
-          <div class="empty">Search a ticker to begin.</div>
+          <div class="empty">
+            Select an opportunity or enter a ticker to begin.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <div>
+            <h2>Pilot Portfolio</h2>
+
+            <div class="muted">
+              Catalyst v1 real-world testing allocation.
+            </div>
+          </div>
+        </div>
+
+        <div class="portfolio-pilot">
+          <div class="portfolio-capital">
+            <span>Starting Capital</span>
+            <strong>$5,000</strong>
+          </div>
+
+          <div class="portfolio-capital">
+            <span>Target Cash Reserve</span>
+            <strong>35%</strong>
+          </div>
+
+          <div class="muted">
+            Current pilot portfolio and benchmark performance are available
+            through the portfolio and performance endpoints.
+          </div>
+
+          <div class="portfolio-links">
+            <a href="/portfolio/pilot" target="_blank">
+              Open Pilot Portfolio
+            </a>
+
+            <a href="/performance/pilot" target="_blank">
+              Open Performance Report
+            </a>
+
+            <a href="/journal" target="_blank">
+              Open Decision Journal
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -88,28 +216,53 @@
     <section class="grid">
       <div class="card">
         <div class="section-title">
-          <h2>Event Intelligence</h2>
-          <button id="refreshEvents">Refresh Events</button>
+          <div>
+            <h2>Event Intelligence</h2>
+
+            <div class="muted">
+              Material developments affecting the investment universe.
+            </div>
+          </div>
+
+          <button id="refreshEvents">
+            Refresh Events
+          </button>
         </div>
 
         <div id="eventPanel">
-          <div class="loading">Loading event intelligence...</div>
+          <div class="loading">
+            Loading event intelligence...
+          </div>
         </div>
       </div>
 
       <div class="card">
         <div class="section-title">
-          <h2>Signal Engine</h2>
-          <button id="refreshSignals">Refresh Signals</button>
+          <div>
+            <h2>Signal Engine</h2>
+
+            <div class="muted">
+              Normalized signals influencing company-level decisions.
+            </div>
+          </div>
+
+          <button id="refreshSignals">
+            Refresh Signals
+          </button>
         </div>
 
         <div id="signalPanel">
-          <div class="loading">Loading signals...</div>
+          <div class="loading">
+            Loading signals...
+          </div>
         </div>
       </div>
     </section>
   </div>
 
-  <script type="module" src="/static/js/app.js"></script>
+  <script
+    type="module"
+    src="/static/js/app.js"
+  ></script>
 </body>
 </html>
