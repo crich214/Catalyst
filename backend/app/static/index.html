@@ -14,7 +14,7 @@
 
 <body>
   <div class="shell">
-    <header>
+    <header class="terminal-header">
       <div class="brand">
         <div class="logo">C</div>
 
@@ -45,219 +45,293 @@
       </div>
     </header>
 
-    <section class="grid">
-      <div class="card">
+    <main>
+      <section class="card morning-brief-card">
         <div class="section-title">
           <div>
-            <h2>Current Market Regime</h2>
+            <div class="eyebrow">Chairman</div>
+            <h2>Morning Brief</h2>
+          </div>
+
+          <button
+            class="secondary"
+            id="refreshDashboard"
+          >
+            Refresh Dashboard
+          </button>
+        </div>
+
+        <div id="morningBrief">
+          <div class="loading">
+            Preparing the Chairman's morning brief...
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2>Current Market Regime</h2>
+
+              <div class="muted">
+                Macro conditions guiding capital deployment.
+              </div>
+            </div>
+
+            <button
+              class="secondary"
+              id="refreshRegime"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div
+            class="metric"
+            id="regimeScore"
+          >
+            --
+          </div>
+
+          <h2 id="regimeTitle">
+            Loading...
+          </h2>
+
+          <div
+            class="muted"
+            id="regimeSummary"
+          ></div>
+
+          <div
+            class="chips"
+            id="favoredThemes"
+          ></div>
+
+          <div id="macroFacts"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2>System Health</h2>
+
+              <div class="muted">
+                Live status of Catalyst intelligence engines.
+              </div>
+            </div>
+
+            <button
+              class="secondary"
+              id="refreshHealth"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div id="healthList">
+            <div class="loading">
+              Checking system health...
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card opportunity-board">
+        <div class="section-title">
+          <div>
+            <h2>Opportunity Board</h2>
 
             <div class="muted">
-              Macro conditions guiding capital deployment.
+              Actionable opportunities ranked by adjusted Rich Alpha.
+            </div>
+          </div>
+
+          <button id="refreshRadar">
+            Refresh Opportunities
+          </button>
+        </div>
+
+        <div id="opportunitySummary"></div>
+
+        <div id="radar">
+          <div class="loading">
+            Loading opportunity board...
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2>Investment Committee</h2>
+
+              <div class="muted">
+                Enter a ticker and convene the Catalyst committee.
+              </div>
+            </div>
+          </div>
+
+          <div class="search">
+            <input
+              id="tickerInput"
+              value="FISV"
+              placeholder="Enter ticker e.g. FISV, PYPL, CRM"
+            />
+
+            <button id="analyzeTicker">
+              Convene Committee
+            </button>
+          </div>
+
+          <div id="resultCard">
+            <div class="empty">
+              Select an opportunity or enter a ticker to begin.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2>Pilot Portfolio</h2>
+
+              <div class="muted">
+                Persistent $5,000 Catalyst test portfolio.
+              </div>
+            </div>
+
+            <button
+              class="secondary"
+              id="refreshPortfolio"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div id="portfolioSummary">
+            <div class="loading">
+              Loading pilot portfolio...
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>Current Positions</h2>
+
+            <div class="muted">
+              Entry price, current value, return, and active recommendation.
+            </div>
+          </div>
+        </div>
+
+        <div id="portfolioPositions">
+          <div class="loading">
+            Loading positions...
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>Performance</h2>
+
+            <div class="muted">
+              Catalyst pilot versus SPY and QQQ.
             </div>
           </div>
 
           <button
             class="secondary"
-            id="refreshRegime"
+            id="refreshPerformance"
           >
             Refresh
           </button>
         </div>
 
-        <div
-          class="metric"
-          id="regimeScore"
-        >
-          --
+        <div id="performancePanel">
+          <div class="loading">
+            Loading performance...
+          </div>
         </div>
+      </section>
 
-        <h2 id="regimeTitle">
-          Loading...
-        </h2>
-
-        <div
-          class="muted"
-          id="regimeSummary"
-        ></div>
-
-        <div
-          class="chips"
-          id="favoredThemes"
-        ></div>
-
-        <div id="macroFacts"></div>
-      </div>
-
-      <div class="card">
+      <section class="card">
         <div class="section-title">
           <div>
-            <h2>System Health</h2>
+            <h2>Decision Journal</h2>
 
             <div class="muted">
-              Live status of Catalyst intelligence engines.
+              Saved committee decisions and Chairman summaries.
             </div>
           </div>
 
           <button
             class="secondary"
-            id="refreshHealth"
+            id="refreshJournal"
           >
             Refresh
           </button>
         </div>
 
-        <div id="healthList">
+        <div id="journalPanel">
           <div class="loading">
-            Checking system health...
+            Loading decision journal...
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="card opportunity-board">
-      <div class="section-title">
-        <div>
-          <h2>Opportunity Board</h2>
+      <section class="grid">
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2>Event Intelligence</h2>
 
-          <div class="muted">
-            Actionable opportunities ranked by adjusted Rich Alpha.
+              <div class="muted">
+                Material developments affecting the investment universe.
+              </div>
+            </div>
+
+            <button id="refreshEvents">
+              Refresh Events
+            </button>
           </div>
-        </div>
 
-        <button id="refreshRadar">
-          Refresh Opportunities
-        </button>
-      </div>
-
-      <div id="opportunitySummary"></div>
-
-      <div id="radar">
-        <div class="loading">
-          Loading opportunity board...
-        </div>
-      </div>
-    </section>
-
-    <section class="grid">
-      <div class="card">
-        <div class="section-title">
-          <div>
-            <h2>Investment Committee</h2>
-
-            <div class="muted">
-              Enter a ticker and convene the Catalyst committee.
+          <div id="eventPanel">
+            <div class="loading">
+              Loading event intelligence...
             </div>
           </div>
         </div>
 
-        <div class="search">
-          <input
-            id="tickerInput"
-            value="FISV"
-            placeholder="Enter ticker e.g. FISV, PYPL, CRM"
-          />
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2>Signal Engine</h2>
 
-          <button id="analyzeTicker">
-            Convene Committee
-          </button>
-        </div>
+              <div class="muted">
+                Normalized signals influencing company-level decisions.
+              </div>
+            </div>
 
-        <div id="resultCard">
-          <div class="empty">
-            Select an opportunity or enter a ticker to begin.
+            <button id="refreshSignals">
+              Refresh Signals
+            </button>
           </div>
-        </div>
-      </div>
 
-      <div class="card">
-        <div class="section-title">
-          <div>
-            <h2>Pilot Portfolio</h2>
-
-            <div class="muted">
-              Catalyst v1 real-world testing allocation.
+          <div id="signalPanel">
+            <div class="loading">
+              Loading signals...
             </div>
           </div>
         </div>
-
-        <div class="portfolio-pilot">
-          <div class="portfolio-capital">
-            <span>Starting Capital</span>
-            <strong>$5,000</strong>
-          </div>
-
-          <div class="portfolio-capital">
-            <span>Target Cash Reserve</span>
-            <strong>35%</strong>
-          </div>
-
-          <div class="muted">
-            Current pilot portfolio and benchmark performance are available
-            through the portfolio and performance endpoints.
-          </div>
-
-          <div class="portfolio-links">
-            <a href="/portfolio/pilot" target="_blank">
-              Open Pilot Portfolio
-            </a>
-
-            <a href="/performance/pilot" target="_blank">
-              Open Performance Report
-            </a>
-
-            <a href="/journal" target="_blank">
-              Open Decision Journal
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid">
-      <div class="card">
-        <div class="section-title">
-          <div>
-            <h2>Event Intelligence</h2>
-
-            <div class="muted">
-              Material developments affecting the investment universe.
-            </div>
-          </div>
-
-          <button id="refreshEvents">
-            Refresh Events
-          </button>
-        </div>
-
-        <div id="eventPanel">
-          <div class="loading">
-            Loading event intelligence...
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="section-title">
-          <div>
-            <h2>Signal Engine</h2>
-
-            <div class="muted">
-              Normalized signals influencing company-level decisions.
-            </div>
-          </div>
-
-          <button id="refreshSignals">
-            Refresh Signals
-          </button>
-        </div>
-
-        <div id="signalPanel">
-          <div class="loading">
-            Loading signals...
-          </div>
-        </div>
-      </div>
-    </section>
+      </section>
+    </main>
   </div>
 
   <script
