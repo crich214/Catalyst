@@ -1,8 +1,15 @@
-import { getPortfolio } from "./api.js";
+import {
+  getPortfolio,
+  getPerformance,
+} from "./api.js";
 
 
 function formatCurrency(value) {
-  const number = Number(value ?? 0);
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "--";
+  }
 
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -12,14 +19,23 @@ function formatCurrency(value) {
 
 
 function formatNumber(value, digits = 2) {
-  const number = Number(value ?? 0);
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "--";
+  }
 
   return number.toFixed(digits);
 }
 
 
 function formatPercent(value) {
-  const number = Number(value ?? 0);
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "--";
+  }
+
   const sign = number > 0 ? "+" : "";
 
   return `${sign}${number.toFixed(2)}%`;
@@ -27,17 +43,17 @@ function formatPercent(value) {
 
 
 function returnClass(value) {
-  const number = Number(value ?? 0);
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number === 0) {
+    return "neutral";
+  }
 
   if (number > 0) {
     return "positive";
   }
 
-  if (number < 0) {
-    return "negative";
-  }
-
-  return "neutral";
+  return "negative";
 }
 
 
@@ -71,19 +87,127 @@ function escapeHtml(value) {
 }
 
 
+function firstFiniteNumber(...values) {
+  for (const value of values) {
+    const number = Number(value);
+
+    if (Number.isFinite(number)) {
+      return number;
+    }
+  }
+
+  return null;
+}
+
+
+function normalizePerformancePositions(performance) {
+  const candidates = [
+    performance?.positions,
+    performance?.position_performance,
+    performance?.holdings,
+    performance?.portfolio?.positions,
+    performance?.performance?.positions,
+  ];
+
+  return candidates.find(Array.isArray) ?? [];
+}
+
+
+function findPerformancePosition(
+  portfolioPosition,
+  performancePositions
+) {
+  const ticker = String(
+    portfolioPosition?.ticker ?? ""
+  ).toUpperCase();
+
+  return performancePositions.find(
+    (position) =>
+      String(position?.ticker ?? "").toUpperCase() === ticker
+  );
+}
+
+
+function mergePositionData(
+  portfolioPosition,
+  performancePositions
+) {
+  const livePosition = findPerformancePosition(
+    portfolioPosition,
+    performancePositions
+  );
+
+  return {
+    ...portfolioPosition,
+
+    current_price: firstFiniteNumber(
+      livePosition?.current_price,
+      livePosition?.market_price,
+      livePosition?.price,
+      portfolioPosition?.current_price,
+      portfolioPosition?.entry_price
+    ),
+
+    current_value: firstFiniteNumber(
+      livePosition?.current_value,
+      livePosition?.market_value,
+      livePosition?.position_value,
+      portfolioPosition?.current_value
+    ),
+
+    unrealized_gain_loss: firstFiniteNumber(
+      livePosition?.unrealized_gain_loss,
+      livePosition?.gain_loss,
+      livePosition?.profit_loss,
+      portfolioPosition?.unrealized_gain_loss
+    ),
+
+    unrealized_return_pct: firstFiniteNumber(
+      livePosition?.unrealized_return_pct,
+      livePosition?.return_pct,
+      livePosition?.gain_loss_pct,
+      livePosition?.performance_pct,
+      portfolioPosition?.unrealized_return_pct,
+      0
+    ),
+  };
+}
+
+
 function renderPositionRow(position) {
-  const ticker = String(position.ticker ?? "").toUpperCase();
-  const company = position.company ?? ticker;
-  const shares = Number(position.shares ?? 0);
-  const entryPrice = Number(position.entry_price ?? 0);
-  const currentPrice = Number(
-    position.current_price ??
-    position.entry_price ??
+  const ticker = String(
+    position.ticker ?? ""
+  ).toUpperCase();
+
+  const company =
+    position.company ??
+    position.company_name ??
+    ticker;
+
+  const shares = firstFiniteNumber(
+    position.shares,
+    position.quantity,
     0
   );
-  const returnPct = Number(
-    position.unrealized_return_pct ?? 0
+
+  const entryPrice = firstFiniteNumber(
+    position.entry_price,
+    position.average_cost,
+    position.cost_basis_per_share,
+    0
   );
+
+  const currentPrice = firstFiniteNumber(
+    position.current_price,
+    entryPrice,
+    0
+  );
+
+  const returnPct = firstFiniteNumber(
+    position.unrealized_return_pct,
+    0
+  );
+
   const recommendation = String(
     position.recommendation ?? "WATCH"
   ).toUpperCase();
@@ -111,10 +235,19 @@ function renderPositionRow(position) {
         ${formatPercent(returnPct)}
       </td>
 
-      <td>${formatNumber(position.rich_alpha_score, 1)}</td>
+      <td>
+        ${formatNumber(
+          position.rich_alpha_score,
+          1
+        )}
+      </td>
 
       <td>
-        <span class="rec ${recommendationClass(recommendation)}">
+        <span
+          class="rec ${recommendationClass(
+            recommendation
+          )}"
+        >
           ${escapeHtml(recommendation)}
         </span>
       </td>
@@ -130,7 +263,10 @@ function bindPositionClicks(container) {
       row.addEventListener("click", () => {
         const ticker = row.dataset.ticker;
 
-        if (ticker && typeof window.loadTicker === "function") {
+        if (
+          ticker &&
+          typeof window.loadTicker === "function"
+        ) {
           window.loadTicker(ticker);
         }
       });
@@ -142,6 +278,7 @@ export async function loadPortfolio() {
   const summary = document.getElementById(
     "portfolioSummary"
   );
+
   const positions = document.getElementById(
     "portfolioPositions"
   );
@@ -163,26 +300,111 @@ export async function loadPortfolio() {
   `;
 
   try {
-    const portfolio = await getPortfolio();
+    const [
+      portfolio,
+      performance,
+    ] = await Promise.all([
+      getPortfolio(),
+      getPerformance(),
+    ]);
 
-    const startingCapital = Number(
-      portfolio.starting_capital ?? 0
+    const startingCapital = firstFiniteNumber(
+      performance?.starting_capital,
+      performance?.initial_capital,
+      performance?.portfolio?.starting_capital,
+      portfolio?.starting_capital,
+      0
     );
-    const investedCapital = Number(
-      portfolio.invested_capital ?? 0
+
+    const investedCapital = firstFiniteNumber(
+      portfolio?.invested_capital,
+      portfolio?.cost_basis,
+      performance?.invested_capital,
+      performance?.cost_basis,
+      0
     );
-    const cash = Number(
-      portfolio.cash ?? 0
+
+    const cash = firstFiniteNumber(
+      performance?.cash,
+      performance?.cash_balance,
+      performance?.portfolio?.cash,
+      portfolio?.cash,
+      portfolio?.starting_cash,
+      0
     );
-    const portfolioValue = Number(
-      portfolio.total_value ??
-      investedCapital + cash
+
+    const investedValue = firstFiniteNumber(
+      performance?.invested_value,
+      performance?.current_invested_value,
+      performance?.market_value,
+      performance?.positions_value,
+      performance?.portfolio?.invested_value
     );
+
+    const portfolioValue = firstFiniteNumber(
+      performance?.current_portfolio_value,
+      performance?.portfolio_value,
+      performance?.current_value,
+      performance?.total_value,
+      performance?.ending_value,
+      performance?.portfolio?.total_value,
+      investedValue != null
+        ? investedValue + cash
+        : null,
+      startingCapital
+    );
+
+    const reportedGainLoss = firstFiniteNumber(
+      performance?.total_gain_loss,
+      performance?.gain_loss,
+      performance?.profit_loss,
+      performance?.unrealized_gain_loss,
+      performance?.portfolio?.total_gain_loss
+    );
+
     const totalGainLoss =
-      portfolioValue - startingCapital;
-    const totalReturnPct = startingCapital
-      ? (totalGainLoss / startingCapital) * 100
-      : 0;
+      reportedGainLoss ??
+      (
+        portfolioValue != null &&
+        startingCapital != null
+          ? portfolioValue - startingCapital
+          : 0
+      );
+
+    const reportedReturnPct = firstFiniteNumber(
+      performance?.total_return_pct,
+      performance?.return_pct,
+      performance?.portfolio_return_pct,
+      performance?.performance_pct,
+      performance?.portfolio?.total_return_pct
+    );
+
+    const totalReturnPct =
+      reportedReturnPct ??
+      (
+        startingCapital
+          ? (
+              totalGainLoss /
+              startingCapital
+            ) * 100
+          : 0
+      );
+
+    const cashReservePct = firstFiniteNumber(
+      performance?.cash_reserve_pct,
+      portfolio?.cash_reserve_pct,
+      startingCapital
+        ? (cash / startingCapital) * 100
+        : 0
+    );
+
+    const displayedInvestedValue =
+      investedValue ??
+      (
+        portfolioValue != null
+          ? portfolioValue - cash
+          : investedCapital
+      );
 
     summary.innerHTML = `
       <div class="portfolio-summary-grid">
@@ -195,11 +417,18 @@ export async function loadPortfolio() {
         </div>
 
         <div class="metric-card">
-          <span>Invested Capital</span>
+          <span>Invested Value</span>
 
           <strong>
-            ${formatCurrency(investedCapital)}
+            ${formatCurrency(
+              displayedInvestedValue
+            )}
           </strong>
+
+          <div class="small">
+            Cost basis:
+            ${formatCurrency(investedCapital)}
+          </div>
         </div>
 
         <div class="metric-card">
@@ -210,20 +439,26 @@ export async function loadPortfolio() {
           </strong>
 
           <div class="small">
-            ${formatPercent(
-              portfolio.cash_reserve_pct ?? 0
-            )}
+            ${formatPercent(cashReservePct)}
           </div>
         </div>
 
         <div class="metric-card">
           <span>Total Return</span>
 
-          <strong class="${returnClass(totalReturnPct)}">
+          <strong
+            class="${returnClass(
+              totalReturnPct
+            )}"
+          >
             ${formatPercent(totalReturnPct)}
           </strong>
 
-          <div class="small ${returnClass(totalGainLoss)}">
+          <div
+            class="small ${returnClass(
+              totalGainLoss
+            )}"
+          >
             ${formatCurrency(totalGainLoss)}
           </div>
         </div>
@@ -231,7 +466,7 @@ export async function loadPortfolio() {
     `;
 
     const portfolioPositions = Array.isArray(
-      portfolio.positions
+      portfolio?.positions
     )
       ? portfolio.positions
       : [];
@@ -246,7 +481,21 @@ export async function loadPortfolio() {
       return;
     }
 
-    const rows = portfolioPositions
+    const performancePositions =
+      normalizePerformancePositions(
+        performance
+      );
+
+    const mergedPositions =
+      portfolioPositions.map(
+        (position) =>
+          mergePositionData(
+            position,
+            performancePositions
+          )
+      );
+
+    const rows = mergedPositions
       .map(renderPositionRow)
       .join("");
 
@@ -287,7 +536,10 @@ export async function loadPortfolio() {
         </strong>
 
         <div class="small">
-          ${escapeHtml(error?.message ?? "Unknown error")}
+          ${escapeHtml(
+            error?.message ??
+            "Unknown error"
+          )}
         </div>
       </div>
     `;

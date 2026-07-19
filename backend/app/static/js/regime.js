@@ -44,6 +44,8 @@ function renderThemes(themes) {
 
 
 function renderMacroFacts(data) {
+  const macro = data.data || {};
+
   const facts = [
     {
       label: "Risk Level",
@@ -52,22 +54,22 @@ function renderMacroFacts(data) {
     {
       label: "Fed Funds",
       value:
-        data.fed_funds_rate != null
-          ? `${formatNumber(data.fed_funds_rate)}%`
+        macro.fed_funds?.value != null
+          ? `${formatNumber(macro.fed_funds.value)}%`
           : "--",
     },
     {
       label: "10Y Treasury",
       value:
-        data.ten_year_yield != null
-          ? `${formatNumber(data.ten_year_yield)}%`
+        macro.ten_year?.value != null
+          ? `${formatNumber(macro.ten_year.value)}%`
           : "--",
     },
     {
       label: "2Y Treasury",
       value:
-        data.two_year_yield != null
-          ? `${formatNumber(data.two_year_yield)}%`
+        macro.two_year?.value != null
+          ? `${formatNumber(macro.two_year.value)}%`
           : "--",
     },
     {
@@ -80,8 +82,8 @@ function renderMacroFacts(data) {
     {
       label: "Unemployment",
       value:
-        data.unemployment_rate != null
-          ? `${formatNumber(data.unemployment_rate)}%`
+        macro.unemployment?.value != null
+          ? `${formatNumber(macro.unemployment.value)}%`
           : "--",
     },
   ];
@@ -141,9 +143,15 @@ export async function loadRegime() {
       data.title ??
       "Unknown";
 
+    const portfolioBias = data.portfolio_bias;
+
     const summary =
       data.summary ??
-      data.portfolio_bias ??
+      (
+        typeof portfolioBias === "string"
+          ? portfolioBias
+          : null
+      ) ??
       "No macro summary is currently available.";
 
     const favoredThemes =
